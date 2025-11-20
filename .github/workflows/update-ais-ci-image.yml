@@ -7,15 +7,10 @@ on:
     branches:
       - develop
   workflow_dispatch:
-    # Requires write access to trigger..
+    # Requires write access to trigger.
     inputs:
       pull_from_cache:
-        description: >
-          Control if the new images are built using the cache from the
-          CI images currently tagged 'latest'. Selecting `false` allows for
-          a clean build to update the packages within the image.
-
-          Note: The new image cache is pushed regardless of this option.
+        description: Use cache-from latest image.
         required: false
         default: true
         type: boolean
@@ -30,7 +25,7 @@ jobs:
     env:
       AIS_DOCKER_REGISTRY: ghcr.io/riley-dixon/hipfile-test
       AIS_CI_IMAGE_NAME: ais_ci_${{ matrix.supported_platforms }}
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
     runs-on: [ubuntu-24.04]
     container: docker:28.5
     strategy:
