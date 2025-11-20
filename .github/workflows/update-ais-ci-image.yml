@@ -73,8 +73,6 @@ jobs:
             -f ${GITHUB_WORKSPACE}/util/docker/DOCKERFILE.${{ env.AIS_CI_IMAGE_NAME }} \
             --label "org.opencontainers.image.description= \
               Latest AIS CI Image for ${{ matrix.supported_platforms }}." \
-            --cache-to=type=registry,ref="${{ steps.ci-image.outputs.AIS_CI_IMAGE }}-cache" \
-            ${{ steps.use-cache.outputs.CACHE_FROM_CMD }} \
             --push \
             -t ${{ steps.ci-image.outputs.AIS_CI_IMAGE }} \
             ${GITHUB_WORKSPACE}
