@@ -10,7 +10,7 @@ on:
     # Requires write access to trigger.
     inputs:
       pull_from_cache:
-        description: Use cache-from latest image.
+        description: Build image with 'latest' cache
         required: false
         default: true
         type: boolean
@@ -23,7 +23,7 @@ permissions:
 jobs:
   update_AIS_CI_image:
     env:
-      AIS_DOCKER_REGISTRY: ghcr.io/riley-dixon/hipfile-test
+      AIS_DOCKER_REGISTRY: ghcr.io/rocm/hipfile
       AIS_CI_IMAGE_NAME: ais_ci_${{ matrix.supported_platforms }}
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
     runs-on: [ubuntu-24.04]
@@ -53,8 +53,9 @@ jobs:
         # If triggered by a pull_request, pull_from_cache will be null. Note
         # however `false == null` resolves to `true`. Use empty string to check
         # for 'null'.
+        # See: https://docs.github.com/en/actions/reference/workflows-and-actions/expressions
+        # for how null gets converted when compared to non-null, and converted into a string.
         run: >-
-          echo "Pull_from_cache_truthiness: ${{ inputs.pull_from_cache }}";
           echo "CACHE_FROM_CMD=${{
             ( format('{0}', inputs.pull_from_cache) == '' || inputs.pull_from_cache ) &&
             format('--cache-from=type=registry,ref=\"{0}-cache\"', steps.ci-image.outputs.AIS_CI_IMAGE) ||
