@@ -50,12 +50,13 @@ jobs:
             >> "${GITHUB_OUTPUT}"
       - name: Set Docker Cache Instruction
         id: use-cache
-        # If triggered by a pull_request, pull_from_cache will be null.
-        # Only on workflow_dispatch with pull_from_cache set to false should
-        # we not use --cache-from.
+        # If triggered by a pull_request, pull_from_cache will be null. Note
+        # however `false == null` resolves to `true`. Use empty string to check
+        # for 'null'.
         run: >-
+          echo "Pull_from_cache_truthiness: ${{ inputs.pull_from_cache }}";
           echo "CACHE_FROM_CMD=${{
-            ( inputs.pull_from_cache == null || inputs.pull_from_cache ) &&
+            ( format('{0}', inputs.pull_from_cache) == '' || inputs.pull_from_cache ) &&
             format('--cache-from=type=registry,ref=\"{0}-cache\"', steps.ci-image.outputs.AIS_CI_IMAGE) ||
             ''
           }}" >> "${GITHUB_OUTPUT}"
