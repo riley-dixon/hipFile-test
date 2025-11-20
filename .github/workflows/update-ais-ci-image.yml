@@ -7,7 +7,7 @@ on:
     branches:
       - develop
   workflow_dispatch:
-    # Requires write access to trigger.
+    # Requires write access to trigger..
     inputs:
       pull_from_cache:
         description: Build image with 'latest' cache
@@ -23,7 +23,7 @@ permissions:
 jobs:
   update_AIS_CI_image:
     env:
-      AIS_DOCKER_REGISTRY: ghcr.io/rocm/hipfile
+      AIS_DOCKER_REGISTRY: ghcr.io/riley-dixon/hipfile-test
       AIS_CI_IMAGE_NAME: ais_ci_${{ matrix.supported_platforms }}
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
     runs-on: [ubuntu-24.04]
