@@ -28,7 +28,7 @@ permissions:
 jobs:
   update_AIS_CI_image:
     env:
-      AIS_DOCKER_REGISTRY: ghcr.io/riley-dixon/hipFile-test
+      AIS_DOCKER_REGISTRY: ghcr.io/riley-dixon/hipfile-test
       AIS_CI_IMAGE_NAME: ais_ci_${{ matrix.supported_platforms }}
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: [ubuntu-24.04]
