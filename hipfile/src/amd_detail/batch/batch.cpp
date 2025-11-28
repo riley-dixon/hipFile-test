@@ -113,7 +113,7 @@ BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_pa
         throw std::invalid_argument(msg.str());
     }
 
-    std::vector<std::shared_ptr<BatchOperation>> pending_ops{};
+    std::vector<std::shared_ptr<IBatchOperation>> pending_ops{};
 
     // It would be more performant to be able to perform multiple lookups
     // rather than waiting to lock the DriverState lock for each lookup.
@@ -124,7 +124,7 @@ BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_pa
         // file flags.
         auto [_file, _buffer] = Context<DriverState>::get()->getFileAndBuffer(
             param_copy->fh, param_copy->u.batch.devPtr_base, param_copy->u.batch.size, 0);
-        auto op = std::make_shared<BatchOperation>(std::move(param_copy), _buffer, _file);
+        auto op = std::shared_ptr<IBatchOperation>{new BatchOperation{std::move(param_copy), _buffer, _file}};
 
         pending_ops.push_back(op);
     }
