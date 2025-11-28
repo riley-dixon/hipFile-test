@@ -94,7 +94,7 @@ private:
     /// but is not yet complete or completed but not yet retrieved by the
     /// application.
     /// shared_ptr as it may need to be passed to a backend.
-    std::unordered_set<std::shared_ptr<BatchOperation>> outstanding_ops;
+    std::unordered_set<std::shared_ptr<IBatchOperation>> outstanding_ops;
 
     BatchContext(unsigned capacity);
 
