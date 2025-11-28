@@ -28,8 +28,13 @@ struct InvalidBatchHandle : public std::invalid_argument {
     }
 };
 
+class IBatchOperation {
+public:
+    virtual ~IBatchOperation() = default;
+};
+
 /// @brief Represents a single IO Request
-class BatchOperation {
+class BatchOperation : public IBatchOperation {
 public:
     /// @brief Create an operation to handle and track an IO request.
     /// @param [in] params IO parameters
