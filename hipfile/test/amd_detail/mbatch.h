@@ -15,6 +15,9 @@
 
 namespace hipFile {
 
+class MBatchOperation : public IBatchOperation {
+};
+
 class MBatchContext : public IBatchContext {
 public:
     MOCK_METHOD(unsigned, get_capacity, (), (const, noexcept, override));
