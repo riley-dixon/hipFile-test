@@ -133,6 +133,11 @@ BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_pa
     outstanding_ops.insert(pending_ops.begin(), pending_ops.end());
 }
 
+std::unordered_set<std::shared_ptr<IBatchOperation>>&
+BatchContextAccessor::get_ops_set(BatchContext& _context){
+    return _context.outstanding_ops;
+}
+
 void
 BatchContextMap::clear()
 {

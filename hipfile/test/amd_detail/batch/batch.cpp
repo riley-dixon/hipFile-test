@@ -10,6 +10,7 @@
 #include "hipfile-test.h"
 #include "hipfile-warnings.h"
 #include "invalid-enum.h"
+#include "mbatch.h"
 #include "mbuffer.h"
 #include "mfile.h"
 #include "mstate.h"
@@ -346,6 +347,19 @@ TEST_F(HipFileBatchContext, SubmitSingleBadParamModeInvalid)
     hipFileIOParams_t bad_io_params = io_params;
     bad_io_params.mode              = invalidEnum<hipFileBatchMode_t>(-1);
     ASSERT_THROW(_context->submit_operations(&bad_io_params, 1), std::invalid_argument);
+}
+
+// Not a real test - proof of concept
+TEST_F(HipFileBatchContext, _InsertMBatchOperationIntoContext)
+{
+    BatchContextAccessor bca;
+    auto ops = bca.get_ops_set(*std::dynamic_pointer_cast<BatchContext>(_context));
+
+    std::shared_ptr<IBatchOperation> mock_op = std::make_unique<MBatchOperation>();
+
+    ops.insert(mock_op);
+
+    ASSERT_EQ(1, ops.size());
 }
 
 HIPFILE_WARN_NO_GLOBAL_CTOR_ON

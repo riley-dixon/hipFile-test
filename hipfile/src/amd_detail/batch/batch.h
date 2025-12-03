@@ -98,7 +98,21 @@ private:
 
     BatchContext(unsigned capacity);
 
+    friend class BatchContextAccessor;
     friend class BatchContextMap;
+};
+
+/*
+ * Friend class of BatchContext
+ * 
+ * Can be used to peer into BatchContext's hidden members.
+ * Should not be used in production.
+ */
+class BatchContextAccessor {
+public:
+    // Return a reference to the unordered_set to modify what ops are loaded
+    // in the context.
+    std::unordered_set<std::shared_ptr<IBatchOperation>>& get_ops_set(BatchContext& _context);
 };
 
 class BatchContextMap {
