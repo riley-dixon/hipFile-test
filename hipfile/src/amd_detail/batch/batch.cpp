@@ -22,6 +22,72 @@
 
 namespace hipFile {
 
+// /*
+//     Factory was created with the help of an LLM
+//     - typename... Args - "parameter pack" of zero or more types
+//     - Args... - Expand the "parameter pack"
+//     - typename = std::enable_if_t<...> - dummy template param used as a gate
+//                                          used to check for function resolution
+//                                          Allows for trying all overloads.
+//                                          If no matching signature found at all: compiler error.
+//     - forward<Args>(args)... - "perfectly forward" all passed args into T's matched ctor.
+//                                aka. expand the arg type pack and arg value pack into
+//                                separate std::forward calls.
+// */
+// template <typename T>
+// struct GenericFactory {
+
+//     // Return an instance of T
+//     // Usage: Factory<T>::make(...)
+//     template <
+//         typename... Args,
+//         typename = std::enable_if_t<std::is_constructible<T, Args...>::value>
+//     >
+//     static T make(Args&&... args)
+//     {
+//         return T(std::forward<Args>(args)...);
+//     }
+
+//     // Return a std::shared_ptr of T
+//     // Usage:: Factory<T>::make_shared(...)
+//     template <
+//         typename... Args,
+//         typename = std::enable_if_t<std::is_constructible<T, Args...>::value>
+//     >
+//     static std::shared_ptr<T> make_shared(Args&&... args)
+//     {
+//         return std::make_shared<T>(std::forward<Args>(args)...);
+//     }
+
+//     // Return a std::shared_ptr of a base class of T
+//     // Usage: Factory<T>::make_shared_as<BaseT>(...)
+//     template <
+//         typename BaseT,
+//         typename... Args,
+//         typename = std::enable_if_t<
+//             std::is_constructible<T, Args...>::value &&
+//             std::is_base_of<BaseT, T>::value
+//         >
+//     >
+//     static std::shared_ptr<BaseT> make_shared_as(Args&&... args)
+//     {
+//         return std::static_pointer_cast<BaseT>(std::make_shared<T>(std::forward<Args>(args)...));
+//         //return std::shared_ptr<BaseT>{new T{std::forward<Args(args)...}}
+//         //return std::make_shared<T>(std::forward<Args>(args)...);
+//     }
+
+//     // Return a std::unique_ptr of T
+//     template <
+//         typename... Args,
+//         typename = std::enable_if_t<std::is_constructible<T, Args...>::value>
+//     >
+//     static std::unique_ptr<T> make_unique(Args&&... args)
+//     {
+//         return std::make_unique<T>(std::forward<Args>(args)...);
+//     }
+// };
+
+
 BatchOperation::BatchOperation(std::unique_ptr<const hipFileIOParams_t> params,
                                std::shared_ptr<IBuffer> _buffer, std::shared_ptr<IFile> _file)
     : io_params{std::move(params)}, buffer{_buffer}, file{_file}
@@ -99,9 +165,26 @@ BatchContext::get_capacity() const noexcept
     return capacity;
 }
 
+//using BatchOpFactory = std::function<Factory>
+
+// template <typename Factory>
+// void
+// test_usage(Factory& fac)
+// {
+//     (void)fac;
+// }
+
+// void
+// test_caller()
+// {
+//     Factory<BatchOperation> fac;
+//     test_usage(fac);
+// }
+
 void
-BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_params)
+BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_params, IFactory<IBatchOperation> factory)
 {
+    (void)factory;
     std::unique_lock<std::shared_mutex> _ulock{context_mutex};
 
     // Check num_params first before doing anything else
@@ -113,7 +196,7 @@ BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_pa
         throw std::invalid_argument(msg.str());
     }
 
-    std::vector<std::shared_ptr<BatchOperation>> pending_ops{};
+    std::vector<std::shared_ptr<IBatchOperation>> pending_ops{};
 
     // It would be more performant to be able to perform multiple lookups
     // rather than waiting to lock the DriverState lock for each lookup.
@@ -124,7 +207,8 @@ BatchContext::submit_operations(const hipFileIOParams_t *params, unsigned num_pa
         // file flags.
         auto [_file, _buffer] = Context<DriverState>::get()->getFileAndBuffer(
             param_copy->fh, param_copy->u.batch.devPtr_base, param_copy->u.batch.size, 0);
-        auto op = std::make_shared<BatchOperation>(std::move(param_copy), _buffer, _file);
+        auto op = std::shared_ptr<IBatchOperation>{new BatchOperation{std::move(param_copy), _buffer, _file}};
+
 
         pending_ops.push_back(op);
     }
