@@ -28,8 +28,13 @@ struct InvalidBatchHandle : public std::invalid_argument {
     }
 };
 
+class IBatchOperation {
+public:
+    virtual ~IBatchOperation() = default;
+};
+
 /// @brief Represents a single IO Request
-class BatchOperation {
+class BatchOperation : public IBatchOperation {
 public:
     /// @brief Create an operation to handle and track an IO request.
     /// @param [in] params IO parameters
@@ -89,11 +94,25 @@ private:
     /// but is not yet complete or completed but not yet retrieved by the
     /// application.
     /// shared_ptr as it may need to be passed to a backend.
-    std::unordered_set<std::shared_ptr<BatchOperation>> outstanding_ops;
+    std::unordered_set<std::shared_ptr<IBatchOperation>> outstanding_ops;
 
     BatchContext(unsigned capacity);
 
+    friend class BatchContextAccessor;
     friend class BatchContextMap;
+};
+
+/*
+ * Friend class of BatchContext
+ * 
+ * Can be used to peer into BatchContext's hidden members.
+ * Should not be used in production.
+ */
+class BatchContextAccessor {
+public:
+    // Return a reference to the unordered_set to modify what ops are loaded
+    // in the context.
+    std::unordered_set<std::shared_ptr<IBatchOperation>>& get_ops_set(BatchContext& _context);
 };
 
 class BatchContextMap {
