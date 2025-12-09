@@ -7,6 +7,7 @@
 
 #include "hipfile.h"
 
+#include <functional>
 #include <memory>
 #include <shared_mutex>
 #include <stdexcept>
@@ -28,8 +29,13 @@ struct InvalidBatchHandle : public std::invalid_argument {
     }
 };
 
+class IBatchOperation {
+public:
+    virtual ~IBatchOperation() = default;
+};
+
 /// @brief Represents a single IO Request
-class BatchOperation {
+class BatchOperation : public IBatchOperation {
 public:
     /// @brief Create an operation to handle and track an IO request.
     /// @param [in] params IO parameters
@@ -50,13 +56,27 @@ private:
     const std::shared_ptr<const IFile> file;
 };
 
+#include "hipfile-warnings.h"
+HIPFILE_WARN_OFF("unused-function")
+using BatchOpMaker = std::function<std::shared_ptr<IBatchOperation>(std::unique_ptr<const hipFileIOParams_t>, std::shared_ptr<IBuffer>, std::shared_ptr<IFile>)>;
+static const std::shared_ptr<IBatchOperation> default_make_op(std::unique_ptr<const hipFileIOParams_t> p, std::shared_ptr<IBuffer> b, std::shared_ptr<IFile> f)
+{
+    return std::dynamic_pointer_cast<IBatchOperation>(std::make_shared<BatchOperation>(std::move(p), b, f));
+}
+// OR
+inline constexpr auto DefaultBatchOpMaker = [](std::unique_ptr<const hipFileIOParams_t> p, std::shared_ptr<IBuffer> b, std::shared_ptr<IFile> f){
+    return std::dynamic_pointer_cast<IBatchOperation>(std::make_shared<BatchOperation>(std::move(p), b, f));
+};
+HIPFILE_WARN_ON("unused-function")
+
 class IBatchContext {
 public:
     static constexpr unsigned MAX_SIZE = 128;
 
     virtual ~IBatchContext()                                                                 = default;
     virtual unsigned get_capacity() const noexcept                                           = 0;
-    virtual void     submit_operations(const hipFileIOParams_t *params, unsigned num_params) = 0;
+    virtual void     submit_operations(const hipFileIOParams_t *params, unsigned num_params, const BatchOpMaker& make_op = DefaultBatchOpMaker) = 0;
+    virtual std::unordered_set<std::shared_ptr<IBatchOperation>> get_ops() = 0;
 };
 
 class BatchContext : public IBatchContext {
@@ -76,8 +96,12 @@ public:
     /// @note This is an All or None operation. If one submitted operation is not valid, no operations
     ///       will be submitted.
     ///
-    void submit_operations(const hipFileIOParams_t *params, const unsigned num_params) override;
+    void submit_operations(const hipFileIOParams_t *params, const unsigned num_params, const BatchOpMaker& make_op) override;
 
+    // not a real function - PoC used to peer internally that the correct factory was used
+    std::unordered_set<std::shared_ptr<IBatchOperation>> get_ops() override {
+        return outstanding_ops;
+    }
 private:
     const unsigned capacity;
 
@@ -89,7 +113,7 @@ private:
     /// but is not yet complete or completed but not yet retrieved by the
     /// application.
     /// shared_ptr as it may need to be passed to a backend.
-    std::unordered_set<std::shared_ptr<BatchOperation>> outstanding_ops;
+    std::unordered_set<std::shared_ptr<IBatchOperation>> outstanding_ops;
 
     BatchContext(unsigned capacity);
 

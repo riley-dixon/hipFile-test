@@ -10,6 +10,7 @@
 #include "hipfile-test.h"
 #include "hipfile-warnings.h"
 #include "invalid-enum.h"
+#include "mbatch.h"
 #include "mbuffer.h"
 #include "mfile.h"
 #include "mstate.h"
@@ -19,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <queue>
 #include <stdexcept>
 #include <utility>
 
@@ -347,5 +349,33 @@ TEST_F(HipFileBatchContext, SubmitSingleBadParamModeInvalid)
     bad_io_params.mode              = invalidEnum<hipFileBatchMode_t>(-1);
     ASSERT_THROW(_context->submit_operations(&bad_io_params, 1), std::invalid_argument);
 }
+
+// Not a real test - testing proof of concept
+TEST_F(HipFileBatchContext, _UseMockedFactory)
+{
+    _context->submit_operations(&io_params, 1, MBatchOperation::MBatchOpMaker);
+    auto context_ops = _context->get_ops();
+    for(auto op : context_ops) {
+        // hack since we don't have the key to directly reference
+        //ASSERT_EQ(typeid(op.get()), typeid(MBatchOperation));
+        ASSERT_NE(dynamic_cast<MBatchOperation*>(op.get()), nullptr);
+    }
+}
+
+TEST_F(HipFileBatchContext, _UseMockedFactoryWithQueue)
+{
+    auto& mocked_ops = MBatchOperation::get_queue();
+    std::shared_ptr<MBatchOperation> m_op = std::make_shared<MBatchOperation>();
+
+    mocked_ops.push(m_op);
+    ASSERT_FALSE(mocked_ops.empty());
+    _context->submit_operations(&io_params, 1, MBatchOperation::MBatchOpMaker_queue);
+
+    ASSERT_TRUE(mocked_ops.empty()); // Queue of mocks has been emptied.
+
+    auto context_ops = _context->get_ops();
+    ASSERT_EQ(context_ops.count(m_op), 1); // m_op is in the Context.
+}
+
 
 HIPFILE_WARN_NO_GLOBAL_CTOR_ON
