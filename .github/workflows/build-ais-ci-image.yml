@@ -69,10 +69,10 @@ jobs:
       - name: Set target AIS CI Image
         id: ci-image
         run: |
-          echo "AIS_CI_IMAGE=${AIS_DOCKER_REGISTRY}/${AIS_CI_IMAGE_NAME}:${AIS_CI_IMAGE_TAG}" \
-            >> "${GITHUB_OUTPUT}"
-          echo "AIS_CI_LATEST_CACHE=${AIS_DOCKER_REGISTRY}/${AIS_CI_IMAGE_NAME}:latest-rocm${AIS_INPUT_ROCM_VERSION}-cache" \
-            >> "${GITHUB_OUTPUT}"
+          AIS_CI_IMAGE="${AIS_DOCKER_REGISTRY}/${AIS_CI_IMAGE_NAME}:${AIS_CI_IMAGE_TAG}"
+          echo "AIS_CI_IMAGE=$(printf '%s' ${AIS_CI_IMAGE} | tr '[:upper:]' '[:lower:]')" >> "${GITHUB_OUTPUT}"
+          AIS_CI_LATEST_CACHE="${AIS_DOCKER_REGISTRY}/${AIS_CI_IMAGE_NAME}:latest-rocm${AIS_INPUT_ROCM_VERSION}-cache"
+          echo "AIS_CI_LATEST_CACHE=$(printf '%s' ${AIS_CI_LATEST_CACHE} | tr '[:upper:]' '[:lower:]')" >> "${GITHUB_OUTPUT}"
       - name: Fetching code repository...
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #v6.0.1
       - name: Authenticating to GitHub Container Registry.
