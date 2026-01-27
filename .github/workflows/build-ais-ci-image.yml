@@ -2,7 +2,7 @@ name: new_CI_image
 run-name: Build the Docker image for AIS CI.
 env:
   AIS_CI_IMAGE_NAME: ais_ci_${{ inputs.platform }}
-  AIS_DOCKER_REGISTRY: ghcr.io/rocm/hipfile
+  AIS_DOCKER_REGISTRY: ghcr.io/${{ github.repository }}
   AIS_INPUT_ROCM_VERSION: ${{ inputs.rocm_version }}
   AIS_PR_BASE_URL: https://github.com/ROCm/hipFile/pull
 on:
@@ -31,7 +31,7 @@ on:
           Otherwise, returns the current CI image name & tag.
         value: >-
           ${{ 
-            jobs.build_AIS_image.result == 'skipped' && format('ghcr.io/rocm/hipfile/ais_ci_{0}:latest-rocm{1}', inputs.platform, inputs.rocm_version) ||
+            jobs.build_AIS_image.result == 'skipped' && format('ghcr.io/{0}/ais_ci_{1}:latest-rocm{2}', github.repository, inputs.platform, inputs.rocm_version) ||
             jobs.build_AIS_image.result == 'success' && jobs.build_AIS_image.outputs.new_ci_image ||
             null
           }}
